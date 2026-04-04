@@ -1,0 +1,100 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" 
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER          
+  ACTIVE_SELLER   // Tasdiqlangan sotuvchi
+  PENDING_SELLER  // Yangi kelgan (imkoniyatsiz)
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  name              String    // Ism va familiya uchun
+  password          String?   // Google bilan kirganlarda bo'sh bo'ladi
+  googleId          String?   @unique
+  role              UserRole  @default(PENDING_SELLER)
+  
+  isEmailVerified   Boolean   @default(false)
+  verificationCode  String?   // 6 xonali kod
+  
+  // Parolni tiklash uchun
+  resetCode         String?   // 6 xonali kod
+  resetCodeExpiry   DateTime?
+
+  shops             Shop[]
+
+// YANGI QATOR: Refresh tokenni shifrlangan holda saqlash uchun
+  hashedRefreshToken String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Shop {
+  id          String    @id @default(uuid())
+  name        String    
+  uzumShopId  String    @unique 
+  uzumToken   String    
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  products    Product[]
+  orders      Order[]   
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   
+  name        String
+  costPrice   Float    
+  
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  orderItems  OrderItem[] 
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([sku, shopId]) 
+}
+
+model Order {
+  id             String   @id @default(uuid())
+  uzumOrderId    String   @unique 
+  status         String   
+  totalAmount    Float    
+  commission     Float?   
+  
+  orderDate      DateTime 
+  
+  shopId         String
+  shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  
+  items          OrderItem[]
+  createdAt      DateTime @default(now())
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  quantity    Int      
+  price       Float    
+  
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+}
