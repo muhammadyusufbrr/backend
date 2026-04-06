@@ -7,18 +7,42 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   // Admin panel uchun hamma foydalanuvchilarni chiqarish
-  async getAllUsers() {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isEmailVerified: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+  async getAllUsers(page: number, limit: number, search?: string) {
+    const skip = (page - 1) * limit;
+
+    const where = search ? {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { email: { contains: search, mode: 'insensitive' as const } }
+      ]
+    } : {};
+
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          isEmailVerified: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({ where })
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit) || 1,
+      }
+    };
   }
 
   // Rolni o'zgartirish mantiqi

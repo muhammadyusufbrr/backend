@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, Res, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -95,13 +95,22 @@ export class AuthController {
   // ==========================================
 
   @Post('refresh')
-  refreshTokens(@Body() body: { userId: string; refreshToken: string }) {
-    return this.authService.refreshTokens(body.userId, body.refreshToken);
+  refreshTokens(@Body() body: { refreshToken?: string }) {
+    if (!body || !body.refreshToken) {
+      throw new UnauthorizedException("Token topilmadi");
+    }
+    return this.authService.refreshTokens(body.refreshToken);
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   logout(@Req() req) {
     return this.authService.logout(req.user.id);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@Req() req) {
+    return this.authService.getMe(req.user.id);
   }
 }

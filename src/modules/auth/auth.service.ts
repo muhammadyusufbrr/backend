@@ -250,7 +250,17 @@ async register(data: { email: string; name: string; password: string }) {
   // ==========================================
   // 7. TOKENTNI YANGILASH (Refresh)
   // ==========================================
-  async refreshTokens(userId: string, rt: string) {
+  async refreshTokens(rt: string) {
+    let decoded;
+    try {
+      decoded = await this.jwtService.verifyAsync(rt, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'refresh_secret'
+      });
+    } catch (e) {
+      throw new ForbiddenException('Refresh token yaroqsiz yoki muddati tugagan');
+    }
+    const userId = decoded.sub;
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     
     if (!user || !user.hashedRefreshToken) throw new ForbiddenException('Ruxsat etilmagan');
@@ -273,5 +283,17 @@ async register(data: { email: string; name: string; password: string }) {
       data: { hashedRefreshToken: null },
     });
     return { message: 'Tizimdan muvaffaqiyatli chiqdingiz' };
+  }
+
+  // ==========================================
+  // 9. PROFILNI OLISH (Get Me)
+  // ==========================================
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Foydalanuvchi topilmadi');
+
+    // Maxfiy ma'lumotlarni yashiramiz
+    const { password, hashedRefreshToken, verificationCode, resetCode, resetCodeExpiry, ...safeUser } = user;
+    return safeUser;
   }
 }

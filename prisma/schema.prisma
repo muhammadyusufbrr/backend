@@ -31,12 +31,34 @@ model User {
   resetCodeExpiry   DateTime?
 
   shops             Shop[]
+  uzumAccount       UzumAccount?
 
-// YANGI QATOR: Refresh tokenni shifrlangan holda saqlash uchun
+  // Refresh tokenni shifrlangan holda saqlash uchun
   hashedRefreshToken String?
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+}
+
+model UzumAccount {
+  id           Int           @id @default(autoincrement())
+  sellerId     String        @unique
+  user         User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  token        String
+  shops        UzumShop[]
+  financeItems FinanceItem[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model UzumShop {
+  id          Int         @id @default(autoincrement())
+  uzumShopId  BigInt      @unique
+  name        String
+  accountId   Int
+  account     UzumAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model Shop {
@@ -69,6 +91,28 @@ model Product {
   updatedAt   DateTime @updatedAt
 
   @@unique([sku, shopId]) 
+}
+
+model FinanceItem {
+  id                   BigInt      @id
+  uzumAccountId        Int
+  uzumAccount          UzumAccount @relation(fields: [uzumAccountId], references: [id], onDelete: Cascade)
+  shopId               BigInt
+  orderId              BigInt
+  productId            BigInt
+  skuTitle             String
+  status               String
+  dateIssued           DateTime
+  sellerPrice          Float
+  amount               Int
+  amountReturns        Int
+  commission           Float
+  sellerProfit         Float
+  purchasePrice        Float
+  logisticDeliveryFee  Float
+  returnCause          String?
+  createdAt            DateTime
+  updatedAt            DateTime
 }
 
 model Order {
