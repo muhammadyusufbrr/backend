@@ -16,12 +16,13 @@ import { map } from 'rxjs/operators';
 export class BigIntInterceptor implements NestInterceptor {
   intercept(_ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
     return next.handle().pipe(
-      map((data) => {
-        return JSON.parse(
-          JSON.stringify(data, (_key, value) =>
-            typeof value === 'bigint' ? value.toString() : value,
-          ),
+      map((data: unknown) => {
+        if (data === undefined || data === null) return data;
+        const serialized = JSON.stringify(data, (_key, value: unknown) =>
+          typeof value === 'bigint' ? value.toString() : value,
         );
+        if (serialized === undefined) return data;
+        return JSON.parse(serialized) as unknown;
       }),
     );
   }
