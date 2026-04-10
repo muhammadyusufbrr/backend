@@ -35,16 +35,15 @@ export class UzumService {
     userId: string,
     token: string,
   ): Promise<ConnectUzumApiResult> {
-    // 1. Uzum API ga so'rov yuborish — "Bearer" QUSHILMAYDI
+    // 1. Uzum API: Authorization barcha Open API chaqiruqlarida bir xil (finance, shops, …)
     let shops: UzumShopResponse[];
     try {
       const response = await firstValueFrom(
-        this.httpService.get<UzumShopResponse[]>(
-          this.UZUM_SHOPS_URL,
-          {
-            headers: { Authorization: token },
+        this.httpService.get<UzumShopResponse[]>(this.UZUM_SHOPS_URL, {
+          headers: {
+            Authorization: token,
           },
-        ),
+        }),
       );
       shops = Array.isArray(response.data) ? response.data : [];
     } catch (err) {
@@ -61,7 +60,7 @@ export class UzumService {
 
       if (status === 404) {
         throw new BadRequestException(
-          'Uzum API tokeni topilmadi yoki noto\'g\'ri. Iltimos tokenni qayta tekshiring.',
+          "Uzum API tokeni topilmadi yoki noto'g'ri. Iltimos tokenni qayta tekshiring.",
         );
       }
 

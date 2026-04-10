@@ -18,7 +18,7 @@ export class TokenService {
     const [at, rt] = await Promise.all([
       this.jwtService.signAsync({ sub: userId, email }, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: '15m',
+        expiresIn: '1d',
       }),
       this.jwtService.signAsync({ sub: userId, email }, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
